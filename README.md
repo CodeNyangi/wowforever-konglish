@@ -2,59 +2,45 @@
 
 북미 와우 채팅을 한국어로 읽고 영어로 답하는 무료 Mac 앱입니다.
 
-**Mac 기본 오프라인 번역**을 써서 반응이 빠르고, 로그인이나 번역 구독료가 없습니다. 표현이 조금 어색해도 뜻을 알아듣고 대화할 수 있으면 된다는 생각으로 만들었습니다.
+Mac 기본 오프라인 번역을 사용합니다. 로그인이나 번역 구독료 없이 쓸 수 있습니다.
 
 ## 설치
 
-[Mac 앱 다운로드](https://github.com/CodeNyangi/wowforever-konglish/releases/latest)에서 ZIP을 풀고 **Konglish.app**을 **응용 프로그램**으로 옮기세요. 배포 ZIP은 Apple Silicon과 macOS 26 이상용입니다.
+Apple Silicon 맥과 macOS 26 이상에서 사용할 수 있습니다.
+
+[Mac 앱 다운로드](https://github.com/CodeNyangi/wowforever-konglish/releases/latest)에서 ZIP을 받아 압축을 풀고, **Konglish.app**을 **응용 프로그램**으로 옮겨 실행하세요.
+
+처음 실행할 때 열기 안내가 나오면 **시스템 설정 → 개인정보 보호 및 보안 → 확인 없이 열기**에서 Konglish를 열어주세요. [처음 실행 방법](https://support.apple.com/ko-kr/102445)
 
 **시스템 설정 → 일반 → 언어 및 지역 → 번역 언어**에서 **English (US)**와 **Korean**을 내려받으세요.
 
-배포 ZIP에는 Apple 공증이 없어 macOS가 처음 열 때 차단할 수 있습니다. [Apple의 앱 열기 안내](https://support.apple.com/ko-kr/102445)
+**시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용**에서 **Konglish**를 허용하면 보내는 말도 자동으로 바꿀 수 있습니다.
 
 ## 사용법
 
-1. **Konglish → 와우 채팅 연결**을 누르고 와우 창을 공유한 뒤 채팅 영역을 드래그합니다.
-2. **받은 말**은 채팅 본문을 클릭해 번역합니다. 다시 클릭하면 원문이 보입니다.
-3. **보낼 말**은 와우 채팅칸에 한국어를 쓰고 **⌘⇧K**를 누르면 같은 칸이 영어로 바뀝니다. 확인한 뒤 **Enter**로 직접 보냅니다. 처음 한 번 **시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용**에서 **Konglish**를 허용해 주세요.
+Konglish에서 **와우 채팅 연결**을 누르고 와우 창을 공유한 뒤, **입력칸을 포함한 채팅 영역**을 드래그하세요.
 
-번역 중 입력을 고치거나 다른 창으로 이동하면 자동 교체를 취소합니다. 이전 6초 시연에는 수동 붙여넣기 안내가 나오지만, 새 버전은 ⌘⇧K 한 번으로 입력칸을 바꿉니다.
+**받은 말**은 영어 채팅 본문을 클릭하면 한국어로 바뀝니다. 다시 클릭하면 영어로 돌아옵니다.
 
-<img src="docs/images/settings.png" alt="Konglish의 와우 채팅 연결 화면" width="450">
+**보낼 말**은 와우 채팅칸에 한국어를 쓰고 **⌘⇧K**를 누르면 영어로 바뀝니다. 확인한 뒤 **Enter**로 보내세요.
 
-실제 와우에서 **영어 본문 클릭 → 한국어**, **한국어 입력 → 영어**로 바꾸는 모습을 6초로 편집했습니다. 플레이어 이름만 가리고, 채팅 본문·입력칸·완료 안내가 잘 보이도록 화면을 잘랐습니다.
+<img src="docs/images/settings.png" alt="Konglish 채팅 연결 화면" width="450">
 
-![실제 와우에서 양방향 번역하는 6초 시연](docs/media/konglish-6s-demo.gif)
-
-| 영어 채팅을 한국어로 | 한국어 입력을 영어로 · 완료 안내 |
-| --- | --- |
-| <img src="docs/images/chat-translation.png" alt="실제 와우에서 채팅 본문을 클릭한 한국어 번역 결과" width="295"> | <img src="docs/images/draft-translation.png" alt="실제 와우 입력칸의 영어 결과와 복사 완료 안내" width="295"> |
-
-[실제 인게임 영상 보기 · 6초 MP4, 약 40KB](https://github.com/CodeNyangi/wowforever-konglish/releases/download/v0.1.1/konglish-6s-demo.mp4)
+![와우 채팅 번역 예시](docs/media/konglish-6s-demo.gif)
 
 ## 업데이트
 
-**v0.1.2:** 보낼 말은 **한국어 입력 → ⌘⇧K → 영어 확인 → Enter**로 끝납니다. 별도로 전체 선택하거나 붙여넣을 필요가 없습니다. 실제 와우에서 한글이 없어지고 영어만 남는 것을 확인했습니다.
+메뉴 막대의 **Konglish → 업데이트 확인**을 누르면 새 버전을 받아두고, 다음에 앱을 열 때 적용합니다. 자동 업데이트를 켜두면 새 버전을 알아서 확인합니다.
 
-v0.1.1부터 새 버전을 자동으로 확인하고 받아둡니다. 와우 사용 중에는 재시작하지 않으며, **Konglish를 다음에 실행할 때 적용**합니다. 메뉴 막대의 Konglish에서 **업데이트 확인**과 **자동 업데이트 끄기**를 사용할 수 있습니다.
+업데이트 후 입력 권한을 다시 연결하려면 **손쉬운 사용** 목록에서 **Konglish를 −로 제거하고 +로 응용 프로그램의 Konglish.app을 추가**한 뒤 재실행하세요.
 
-v0.1.0 사용자는 이번 버전만 한 번 직접 설치해 주세요.
+## 소스에서 실행
 
-업데이트 뒤 손쉬운 사용을 켰는데도 권한 안내가 반복되면, 목록에서 **Konglish를 −로 제거하고 +로 응용 프로그램의 Konglish.app을 다시 추가**한 뒤 앱을 재실행해 주세요.
-
-언어 파일 설치 후 번역은 오프라인으로 동작합니다. 업데이트 확인과 다운로드에만 인터넷을 사용합니다.
-
-## 소스에서 설치
-
-Node.js 22.12 이상과 macOS 26 SDK가 필요합니다.
+Node.js 22.12 이상과 macOS 26 SDK를 준비한 뒤 실행합니다.
 
 ```sh
 npm ci
 npm run install:mac
-npm test
-npm run test:overlay
 ```
-
-일부 약어만 풀이하는 독립 Lua 애드온도 [addon/Konglish](addon/Konglish)에 있습니다. 전체 문장 번역은 Mac 앱에서 동작합니다.
 
 [MIT 라이선스](LICENSE)
