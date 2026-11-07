@@ -20,15 +20,13 @@
 
 <img src="docs/images/settings.png" alt="Konglish의 와우 채팅 연결 화면" width="450">
 
-실제 와우 채팅칸에서 **“여관 앞에서 만나요” → “Let's meet in front of the inn.”** 으로 바꾸는 모습입니다. 플레이어 이름만 가렸으며, 실제 채팅 전송 전까지 촬영했습니다.
+실제 와우에서 **영어 본문 클릭 → 한국어**, **한국어 입력 → 영어**로 바꾸는 모습을 6초로 편집했습니다. 플레이어 이름만 가리고, 채팅 본문·입력칸·완료 안내가 잘 보이도록 화면을 잘랐습니다.
 
-<img src="docs/media/konglish-outgoing.gif" alt="실제 와우에서 한국어 입력을 영어로 바꾸는 영상" width="540">
-
-| 한국어 입력 | 같은 채팅칸에서 영어로 변환 |
+| 영어 채팅을 한국어로 | 한국어 입력을 영어로 · 완료 안내 |
 | --- | --- |
-| <img src="docs/images/konglish-korean.png" alt="와우 채팅칸의 한국어 입력" width="295"> | <img src="docs/images/konglish-english.png" alt="같은 와우 채팅칸의 영어 변환 결과" width="295"> |
+| <img src="docs/images/chat-translation.png" alt="실제 와우에서 채팅 본문을 클릭한 한국어 번역 결과" width="295"> | <img src="docs/images/draft-translation.png" alt="실제 와우 입력칸의 영어 결과와 복사 완료 안내" width="295"> |
 
-[실제 인게임 영상 MP4](https://github.com/CodeNyangi/wowforever-konglish/releases/download/v0.1.1/konglish-outgoing.mp4)
+[실제 인게임 영상 보기 · 6초 MP4, 약 40KB](https://github.com/CodeNyangi/wowforever-konglish/releases/download/v0.1.1/konglish-6s-demo.mp4)
 
 ## 업데이트
 
