@@ -22,6 +22,8 @@
 
 실제 와우에서 **영어 본문 클릭 → 한국어**, **한국어 입력 → 영어**로 바꾸는 모습을 6초로 편집했습니다. 플레이어 이름만 가리고, 채팅 본문·입력칸·완료 안내가 잘 보이도록 화면을 잘랐습니다.
 
+![실제 와우에서 양방향 번역하는 6초 시연](docs/media/konglish-6s-demo.gif)
+
 | 영어 채팅을 한국어로 | 한국어 입력을 영어로 · 완료 안내 |
 | --- | --- |
 | <img src="docs/images/chat-translation.png" alt="실제 와우에서 채팅 본문을 클릭한 한국어 번역 결과" width="295"> | <img src="docs/images/draft-translation.png" alt="실제 와우 입력칸의 영어 결과와 복사 완료 안내" width="295"> |
