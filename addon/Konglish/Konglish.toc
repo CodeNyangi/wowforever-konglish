@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: WoW Forever Konglish
+## Notes: Korean glosses for common English party-chat phrases.
+## Version: 0.1.0
+## SavedVariables: KonglishSettings
+
+Glossary.lua
+Konglish.lua

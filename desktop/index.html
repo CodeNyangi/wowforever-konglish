@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Konglish</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="renderer.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>Konglish</h1>
+    <p id="state" role="status">와우에서 채팅 영역을 드래그해 연결하세요.</p>
+    <button class="primary" id="connect" type="button">와우 채팅 연결</button>
+    <button id="stop" type="button" hidden>끊기</button>
+    <p>받은 말은 본문 클릭 · 보내는 말은 <kbd>⌘⇧K</kbd></p>
+    <p id="error" role="alert" hidden></p>
+  </main>
+</body>
+</html>

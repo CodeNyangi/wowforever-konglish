@@ -1,0 +1,23 @@
+{
+  "name": "wowforever-konglish",
+  "productName": "WoW Forever Konglish",
+  "version": "0.1.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "desktop/main.js",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "node scripts/build-ocr.js && node scripts/glossary.js --check",
+    "start": "npm run build && electron .",
+    "install:mac": "npm run build && node scripts/install-mac.js",
+    "test": "node scripts/glossary.js --check && node --test test/*.test.js && fengari test/addon.lua",
+    "test:overlay": "node scripts/test-overlay.js"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "fengari-node-cli": "0.1.0"
+  }
+}

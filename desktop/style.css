@@ -1,0 +1,24 @@
+:root {
+  color-scheme: dark;
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #f0f2ed;
+  background: #171d1a;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; }
+main { padding: 26px; max-width: 540px; margin: 0 auto; }
+h1 { margin: 0; font-size: 34px; letter-spacing: -.04em; line-height: 1.15; }
+p { margin: 8px 0 16px; color: #bbc9c0; }
+button {
+  padding: 7px 11px;
+  border: 1px solid #536c60;
+  border-radius: 7px;
+  background: #2a3932;
+  color: inherit;
+  font: inherit;
+}
+button { cursor: pointer; }
+.primary { background: #83dfba; border-color: #83dfba; color: #10291e; font-weight: 700; }
+#error { color: #ffc0ab; font-size: 13px; margin: 8px 0 0; }
+:focus-visible { outline: 2px solid #9ce9d2; outline-offset: 2px; }
