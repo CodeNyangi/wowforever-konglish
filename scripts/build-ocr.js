@@ -24,7 +24,7 @@ function compile(sources, output) {
   return true;
 }
 
-const rebuilt = compile(['OverlayModel.swift', 'OverlayPanels.swift', 'ChatMotion.swift', 'WindowShare.swift', 'LocalTranslation.swift', 'OverlayMain.swift'], new URL('MacOS/konglish-overlay', overlay));
+const rebuilt = compile(['OverlayModel.swift', 'OverlayPanels.swift', 'ChatMotion.swift', 'WindowShare.swift', 'LocalTranslation.swift', 'DraftInput.swift', 'OverlayMain.swift'], new URL('MacOS/konglish-overlay', overlay));
 const info = new URL('OverlayInfo.plist', native);
 const builtInfo = new URL('Info.plist', overlay);
 if (rebuilt || statSync(info).mtimeMs > (statSync(builtInfo, { throwIfNoEntry: false })?.mtimeMs ?? 0)) {

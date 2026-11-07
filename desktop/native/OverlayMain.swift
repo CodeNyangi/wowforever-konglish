@@ -34,6 +34,8 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
     private var noticeUntil: Date?
     private var draftRequested = false
     private var draftRunning = false
+    private var draftActivity: DraftActivity?
+    private let draftInput = DraftInput()
     private var readingChat = false
     private var lastSharedFrame: UInt64?
     private var latestMotion: ChatMotionFrame?
@@ -198,11 +200,14 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
         if draftRequested, !draftRunning {
             draftRequested = false
             let area = draftArea(near: region, windowSize: frame.size)
-            if let image = cropDraft(area) {
+            let activity = draftActivity
+            draftActivity = nil
+            if let image = cropDraft(area), let activity {
                 draftRunning = true
                 Task {
                     defer { draftRunning = false }
-                    await copyDraft(image, area: area, pid: pid, version: version)
+                    await translateDraft(image, area: area, pid: pid, id: id, frame: frame,
+                                         version: version, activity: activity)
                 }
             }
         }
@@ -353,29 +358,75 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
             resetRows()
             region = nil
             updateStatus("와우에서 채팅 영역을 지정해 주세요.")
-        } else if command.action == "draft", foregroundWoW != nil, region != nil, !draftRunning {
+        } else if command.action == "draft" {
+            logger.notice("Draft shortcut received: game=\(self.foregroundWoW != nil), region=\(self.region != nil), busy=\(self.draftRunning)")
+            guard foregroundWoW != nil, region != nil, !draftRunning else { return }
+            draftActivity = .current()
             draftRequested = true
+            showNotice("영어로 바꾸는 중…")
         }
     }
 
-    private func copyDraft(_ image: CGImage, area: CGRect, pid: pid_t, version: Int) async {
+    private func translateDraft(_ image: CGImage, area: CGRect, pid: pid_t, id: CGWindowID,
+                                frame: CGRect, version: Int, activity: DraftActivity) async {
         guard #available(macOS 26.0, *) else { return }
         let start = ContinuousClock.now
+        func isCurrent() -> Bool {
+            foregroundWoW == pid && visibilityVersion == version && windowID == id
+                && activity == .current()
+                && currentFrame(of: id).map { frameMatches($0, frame) } == true
+        }
         do {
             let draft = try await Task.detached(priority: .userInitiated) {
                 try recognizeDraft(image, area: area)
             }.value
-            guard foregroundWoW == pid, visibilityVersion == version else { return }
-            guard let draft else {
+            guard isCurrent() else {
+                logger.notice("Draft cancelled before translation: focus or input changed")
+                if foregroundWoW == pid { showNotice("입력 내용이 바뀌었어요 · 다시 ⌘⇧K") }
+                return
+            }
+            guard draft != nil else {
+                logger.notice("Draft input not recognized")
                 showNotice("채팅 입력칸에 한국어를 쓴 뒤 ⌘⇧K를 누르세요.")
                 return
             }
-            let translation = try await LocalTranslation.shared.translate(draft, to: "en")
-            guard foregroundWoW == pid, visibilityVersion == version else { return }
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(translation, forType: .string)
-            showNotice("영어 복사됨 · ⌘A → ⌘V")
-            logger.notice("Copied an English WoW draft in \(start.duration(to: .now).description, privacy: .public)")
+            guard draftInput.hasPermission() else {
+                logger.notice("Draft replacement needs accessibility permission")
+                emit("warning", text: "자동 입력하려면 시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용에서 Konglish를 허용해 주세요.")
+                return
+            }
+            let source: String
+            switch await draftInput.readDraft(in: pid, isCurrent: isCurrent) {
+            case .selected(let text): source = text
+            case .cancelled:
+                logger.notice("Draft cancelled while reading input")
+                if foregroundWoW == pid { showNotice("자동 입력 취소됨 · 다시 ⌘⇧K") }
+                return
+            case .failed:
+                logger.notice("Draft selection could not be copied")
+                showNotice("입력칸 전체 선택을 확인하지 못했어요 · 다시 ⌘⇧K")
+                return
+            }
+            guard source.range(of: #"\p{Hangul}"#, options: .regularExpression) != nil else {
+                showNotice("채팅 입력칸에 한국어를 쓴 뒤 ⌘⇧K를 누르세요.")
+                return
+            }
+            let translation = DraftInput.singleLine(try await LocalTranslation.shared.translate(source, to: "en"))
+            guard isCurrent(), !translation.isEmpty else {
+                logger.notice("Draft cancelled after translation: focus or input activity changed")
+                if foregroundWoW == pid { showNotice("입력 내용이 바뀌었어요 · 다시 ⌘⇧K") }
+                return
+            }
+            let result = await draftInput.replace(in: pid, original: source, translation: translation, isCurrent: isCurrent)
+            guard result == .replaced else {
+                logger.notice("Draft replacement stopped: selectionFailed=\(result == .selectionFailed)")
+                if foregroundWoW == pid {
+                    showNotice(result == .selectionFailed ? "전체 선택을 확인하지 못했어요 · 다시 ⌘⇧K" : "자동 입력 취소됨 · 다시 ⌘⇧K")
+                }
+                return
+            }
+            showNotice("영어로 바뀜 · Enter로 전송")
+            logger.notice("Replaced a WoW draft in \(start.duration(to: .now).description, privacy: .public)")
         } catch {
             if foregroundWoW == pid, visibilityVersion == version { showNotice(error.localizedDescription) }
         }

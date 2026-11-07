@@ -24,7 +24,11 @@ const overlay = createChatOverlay({
   },
   onForeground(inWoW) {
     if (inWoW && !globalShortcut.isRegistered(draftShortcut)) {
-      globalShortcut.register(draftShortcut, () => overlay.translateDraft());
+      if (!globalShortcut.register(draftShortcut, () => overlay.translateDraft())) {
+        overlayStatus = { ...overlayStatus, error: true, text: '⌘⇧K 단축키를 등록하지 못했어요. 같은 단축키를 쓰는 앱을 확인해 주세요.' };
+        if (window && !window.isDestroyed()) window.webContents.send('overlay-status', overlayStatus);
+        showSettings();
+      }
     } else if (!inWoW) {
       globalShortcut.unregister(draftShortcut);
     }
