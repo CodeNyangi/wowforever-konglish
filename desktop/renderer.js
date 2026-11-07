@@ -16,3 +16,10 @@ get('connect').addEventListener('click', () => running ? api.reselectOverlay() :
 get('stop').addEventListener('click', () => api.stopOverlay());
 api.onOverlayStatus(displayOverlay);
 api.overlayStatus().then(displayOverlay);
+let version = '';
+function displayUpdate(value) {
+  if (value.version) version = value.version;
+  get('version').textContent = `v${version} · ${value.text}`;
+}
+api.onUpdateStatus(displayUpdate);
+api.appVersion().then(displayUpdate);

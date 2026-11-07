@@ -55,7 +55,7 @@ struct ChatObservation {
 }
 
 private let chatPrefix = try! NSRegularExpression(pattern:
-    #"^\s*(?:\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s+)?(?:(?:to\s+)?(?:[\[(][^\[\]()\n]+[\])]?\s*)*[\[(](?!\d+\s*\.\s|(?:party|guild|raid|general|instance(?: chat)?|combat log)[\])])[^\[\]():\n]+?[\])lIijJ|]\s*(?:(?:says|yells|whispers)\s*)?|[\p{L}\p{N}'\-]+(?:\s+[\p{L}\p{N}'\-]+){0,2}\s+(?:says|yells|whispers))\s*[:：]\s*"#,
+    #"^\s*(?:[\])|]\s+)?(?:\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s+)?(?:(?:to\s+)?(?:[\[(][^\[\]()\n]+[\])]?\s*)*[\[(](?!\d+\s*\.\s|(?:party|guild|raid|general|instance(?: chat)?|combat log)[\])])[^\[\]():\n]+?[\])lIijJ|]\s*(?:(?:says|yells|whispers)\s*)?|[\p{L}\p{N}'\-]+(?:\s+[\p{L}\p{N}'\-]+){0,2}\s+(?:says|yells|whispers))\s*[:：]\s*"#,
     options: .caseInsensitive
 )
 
@@ -97,6 +97,8 @@ func groupChat(_ recognized: [ChatTextLine], draftAfterY: CGFloat? = nil) -> [Ch
     var header: ChatTextLine?
     var previous: CGRect?
     var message: ChatObservation?
+    var speakerHeader = false
+    var continuationX: CGFloat?
 
     func beginPlain(_ line: ChatTextLine, text: String) {
         guard !["general", "combat log"].contains(text.lowercased()),
@@ -106,6 +108,8 @@ func groupChat(_ recognized: [ChatTextLine], draftAfterY: CGFloat? = nil) -> [Ch
         message = ChatObservation(line: text, body: text, bounds: line.bounds)
         header = line
         previous = line.bounds
+        speakerHeader = false
+        continuationX = nil
     }
 
     let sorted = recognized.sorted { $0.bounds.midY < $1.bounds.midY }
@@ -128,6 +132,8 @@ func groupChat(_ recognized: [ChatTextLine], draftAfterY: CGFloat? = nil) -> [Ch
             message = nil
             header = nil
             previous = nil
+            speakerHeader = false
+            continuationX = nil
         } else if chatPrefixEnd(line.text) != nil {
             if let message { messages.append(message) }
             message = nil
@@ -136,16 +142,25 @@ func groupChat(_ recognized: [ChatTextLine], draftAfterY: CGFloat? = nil) -> [Ch
             }
             header = line
             previous = line.bounds
+            speakerHeader = true
+            continuationX = nil
         } else if let head = header, let last = previous {
             let indent = line.bounds.minX - head.bounds.minX
             let spacing = line.bounds.midY - last.midY
             let lineHeight = max(last.height, line.bounds.height)
             let adjacent = abs(spacing) <= min(7, lineHeight * 0.5) && line.bounds.minX >= last.maxX - 4
-            let wrapped = (2.5...62).contains(indent)
-                && (lineHeight * 0.50...max(26, lineHeight * 1.9)).contains(spacing)
+            // WoW can wrap flush with the header, while OCR moves the left edge
+            // a few pixels between rows. Keep the continuation's own alignment.
+            let tolerance = max(5, lineHeight * 0.35)
+            let aligned = continuationX.map { abs(line.bounds.minX - $0) <= tolerance }
+                ?? ((speakerHeader ? -tolerance : 2.5)...max(62, lineHeight * 3)).contains(indent)
+            let wrapped = aligned
+                && (lineHeight * 0.50...max(30, lineHeight * 2.3)).contains(spacing)
+            let newHeader = looksLikeHeader(trimmed)
+                && (!speakerHeader || looksLikeContinuationHeader(trimmed))
             if (adjacent || wrapped),
                trimmed.range(of: #"[A-Za-z0-9\p{Hangul}]"#, options: .regularExpression) != nil,
-               !looksLikeHeader(trimmed) {
+               !newHeader {
                 if let current = message {
                     var combined = ChatObservation(line: current.line + " " + trimmed,
                                                    body: current.body + " " + trimmed, bounds: line.bounds)
@@ -156,12 +171,15 @@ func groupChat(_ recognized: [ChatTextLine], draftAfterY: CGFloat? = nil) -> [Ch
                 } else {
                     message = ChatObservation(line: head.text + " " + trimmed, body: trimmed, bounds: line.bounds)
                 }
+                if wrapped { continuationX = line.bounds.minX }
                 previous = line.bounds
             } else if spacing > min(7, lineHeight * 0.5) {
                 if let message { messages.append(message) }
                 message = nil
                 header = nil
                 previous = nil
+                speakerHeader = false
+                continuationX = nil
                 beginPlain(line, text: trimmed)
             }
         } else {
@@ -174,6 +192,11 @@ func groupChat(_ recognized: [ChatTextLine], draftAfterY: CGFloat? = nil) -> [Ch
 
 private func looksLikeHeader(_ text: String) -> Bool {
     text.range(of: #"^(?:[\[(]|\d+\s*\.\s)"#, options: .regularExpression) != nil
+}
+
+private func looksLikeContinuationHeader(_ text: String) -> Bool {
+    text.range(of: #"^(?:[\[(]\s*(?:\d+\s*\.?\s|(?:party|guild|raid|general|instance(?: chat)?|combat log)\b)|[\[(][^\[\]()]+[\])]\s*(?:(?:says|yells|whispers)\s*)?[:：]?\s*$)"#,
+               options: [.regularExpression, .caseInsensitive]) != nil
 }
 
 private func recognizeLines(_ image: CGImage, area: CGRect) throws -> [ChatTextLine] {

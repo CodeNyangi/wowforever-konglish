@@ -21,4 +21,5 @@ button {
 button { cursor: pointer; }
 .primary { background: #83dfba; border-color: #83dfba; color: #10291e; font-weight: 700; }
 #error { color: #ffc0ab; font-size: 13px; margin: 8px 0 0; }
+.version { font-size: 11px; color: #84988c; margin: -7px 0 0; }
 :focus-visible { outline: 2px solid #9ce9d2; outline-offset: 2px; }

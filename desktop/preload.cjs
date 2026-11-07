@@ -6,4 +6,6 @@ contextBridge.exposeInMainWorld('konglish', {
   reselectOverlay: () => ipcRenderer.invoke('reselect-overlay'),
   stopOverlay: () => ipcRenderer.invoke('stop-overlay'),
   onOverlayStatus: callback => { ipcRenderer.on('overlay-status', (_, value) => callback(value)); },
+  appVersion: () => ipcRenderer.invoke('app-version'),
+  onUpdateStatus: callback => { ipcRenderer.on('update-status', (_, value) => callback(value)); },
 });

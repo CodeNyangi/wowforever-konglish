@@ -14,6 +14,8 @@ struct OverlayChecks {
         precondition(chatBodyRange("Combat Log") == nil)
         let named = "[1. General - Dun Morogh] [Tank]: Meet me outside."
         precondition(chatBodyRange(named).map { String(named[$0]) } == "Meet me outside.")
+        let leadingGlyph = "] [1. General - Dun Morogh] [Tank]: Meet me outside."
+        precondition(chatBodyRange(leadingGlyph).map { String(leadingGlyph[$0]) } == "Meet me outside.")
         precondition(chatBodyRange("[1. General - Dun Morogh]: text in the input") == nil)
         let imperfect = "[1. General - Dun Moroghi [Tankl: There is"
         precondition(chatBodyRange(imperfect).map { String(imperfect[$0]) } == "There is")
@@ -50,6 +52,20 @@ struct OverlayChecks {
             textLine("[1. General - Dun Morogh] [Healer]: I'm ready.", y: 214, bodyX: 350),
         ])
         precondition(batch.map(\.body) == [grouped[1].body, "Meet me outside.", "I'm ready."])
+        let flushWrapped = groupChat([
+            textLine("[Party] [Tank]: Looking for", x: 44, y: 100, bodyX: 180),
+            textLine("[Shadow Wand] for my friend", x: 42, y: 124),
+            textLine("and a bag if you have one.", x: 43, y: 148),
+            textLine("[Party] [Healer]: I have one.", x: 43, y: 172, bodyX: 190),
+        ])
+        precondition(flushWrapped.map(\.body) == ["Looking for [Shadow Wand] for my friend and a bag if you have one.", "I have one."])
+        precondition(flushWrapped.map { $0.segments.count } == [3, 1])
+        let smallOCR = groupChat([
+            ChatTextLine(text: "[Tank]: Meet me", bounds: CGRect(x: 43, y: 100, width: 180, height: 10),
+                         bodyBounds: CGRect(x: 110, y: 100, width: 113, height: 10)),
+            ChatTextLine(text: "at the inn, please.", bounds: CGRect(x: 43, y: 128, width: 180, height: 10), bodyBounds: nil),
+        ])
+        precondition(smallOCR.map(\.body) == ["Meet me at the inn, please."])
         var batchRows = ChatRows()
         batchRows.replace(with: grouped)
         let wrappedID = batchRows.rows[1].id

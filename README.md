@@ -1,6 +1,8 @@
 # WoW Forever Konglish
 
-북미 와우 채팅을 한국어로 읽고 영어로 답하는 Mac 앱. 로그인 없이 Mac에서 번역합니다.
+북미 와우 채팅을 한국어로 읽고 영어로 답하는 무료 Mac 앱입니다.
+
+**Mac 기본 오프라인 번역**을 써서 반응이 빠르고, 로그인이나 번역 구독료가 없습니다. 표현이 조금 어색해도 뜻을 알아듣고 대화할 수 있으면 된다는 생각으로 만들었습니다.
 
 ## 설치
 
@@ -18,7 +20,23 @@
 
 <img src="docs/images/settings.png" alt="Konglish의 와우 채팅 연결 화면" width="450">
 
-<img src="docs/images/chat-demo.png" alt="가상의 플레이어 이름으로 보여주는 채팅 번역 예시" width="540">
+실제 와우 채팅칸에서 **“여관 앞에서 만나요” → “Let's meet in front of the inn.”** 으로 바꾸는 모습입니다. 플레이어 이름만 가렸으며, 실제 채팅 전송 전까지 촬영했습니다.
+
+<img src="docs/media/konglish-outgoing.gif" alt="실제 와우에서 한국어 입력을 영어로 바꾸는 영상" width="540">
+
+| 한국어 입력 | 같은 채팅칸에서 영어로 변환 |
+| --- | --- |
+| <img src="docs/images/konglish-korean.png" alt="와우 채팅칸의 한국어 입력" width="295"> | <img src="docs/images/konglish-english.png" alt="같은 와우 채팅칸의 영어 변환 결과" width="295"> |
+
+[실제 인게임 영상 MP4](https://github.com/CodeNyangi/wowforever-konglish/releases/download/v0.1.1/konglish-outgoing.mp4)
+
+## 업데이트
+
+v0.1.1부터 새 버전을 자동으로 확인하고 받아둡니다. 와우 사용 중에는 재시작하지 않으며, **Konglish를 다음에 실행할 때 적용**합니다. 메뉴 막대의 Konglish에서 **업데이트 확인**과 **자동 업데이트 끄기**를 사용할 수 있습니다.
+
+v0.1.0 사용자는 이번 버전만 한 번 직접 설치해 주세요.
+
+언어 파일 설치 후 번역은 오프라인으로 동작합니다. 업데이트 확인과 다운로드에만 인터넷을 사용합니다.
 
 ## 소스에서 설치
 

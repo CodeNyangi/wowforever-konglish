@@ -1,7 +1,8 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray } from 'electron';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createChatOverlay } from './overlay.js';
+import { createUpdater } from './updates.js';
 
 app.setName('WoW Forever Konglish');
 const page = fileURLToPath(new URL('./index.html', import.meta.url));
@@ -9,6 +10,8 @@ const draftShortcut = 'Command+Shift+K';
 let window;
 let tray;
 let quitting = false;
+let updater;
+let updateStatus = { text: '자동 업데이트', automatic: true, ready: false };
 let overlayStatus = { running: false, text: '와우에서 채팅 영역을 드래그해 연결하세요.' };
 
 const overlay = createChatOverlay({
@@ -40,6 +43,13 @@ function refreshTray() {
     { label: '채팅 영역 다시 지정', enabled: overlayStatus.running, click: () => overlay.reselect() },
     { label: '연결 끊기', enabled: overlayStatus.running, click: () => overlay.stop() },
     { type: 'separator' },
+    ...(updater ? [
+      { label: updateStatus.text, enabled: false },
+      { label: '업데이트 확인', click: () => updater.check() },
+      { label: '자동 업데이트', type: 'checkbox', checked: updateStatus.automatic,
+        click: item => updater.setAutomatic(item.checked).then(() => item.checked && updater.check()) },
+      { type: 'separator' },
+    ] : []),
     { label: '종료', role: 'quit' },
   ]));
 }
@@ -57,9 +67,27 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   app.on('second-instance', showSettings);
   app.on('activate', showSettings);
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
+    if (app.isPackaged && process.platform === 'darwin') {
+      updater = createUpdater({
+        version: app.getVersion(), cacheDir: join(app.getPath('userData'), 'updates'),
+        installPath: dirname(dirname(dirname(process.execPath))),
+        onStatus(status) {
+          updateStatus = status;
+          if (window && !window.isDestroyed()) window.webContents.send('update-status', status);
+          refreshTray();
+        },
+      });
+      try {
+        await updater.initialize();
+        if (await updater.installPrepared()) { app.quit(); return; }
+      } catch {
+        updater = undefined;
+        updateStatus = { text: '업데이트 확인을 준비하지 못했어요.', automatic: false, ready: false };
+      }
+    }
     window = new BrowserWindow({
-      width: 450, height: 255, minWidth: 400, minHeight: 235,
+      width: 450, height: 285, minWidth: 400, minHeight: 265,
       title: 'Konglish', autoHideMenuBar: true,
       webPreferences: {
         preload: fileURLToPath(new URL('./preload.cjs', import.meta.url)),
@@ -78,7 +106,12 @@ if (!app.requestSingleInstanceLock()) {
     register('start-overlay', () => { window.hide(); overlay.start(); });
     register('reselect-overlay', () => { window.hide(); overlay.reselect(); });
     register('stop-overlay', () => overlay.stop());
+    register('app-version', () => ({ version: app.getVersion(), ...updateStatus }));
     window.loadFile(page);
+    if (updater) {
+      if (updateStatus.automatic) updater.check();
+      setInterval(() => { if (updateStatus.automatic) updater.check(); }, 6 * 60 * 60 * 1000).unref();
+    }
   });
   app.on('window-all-closed', () => app.quit());
   app.on('before-quit', () => { quitting = true; overlay.stop(); });
