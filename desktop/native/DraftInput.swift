@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import OSLog
 
 struct DraftActivity: Equatable {
     let keyDowns: UInt32
@@ -19,6 +20,7 @@ final class DraftInput {
     enum Result { case replaced, cancelled, selectionFailed }
     enum Selection { case selected(String), cancelled, failed }
     private var prompted = false
+    private let logger = Logger(subsystem: "com.wowforever.konglish.overlay", category: "chat")
     private let permission: () -> Bool
     private let modifiers: () -> CGEventFlags
     private let post: (CGEvent, pid_t) -> Void
@@ -89,19 +91,31 @@ final class DraftInput {
             try? await Task.sleep(for: .milliseconds(20))
         }
         guard isCurrent(), permission(), modifiers().intersection(heldKeys).isEmpty else { return .cancelled }
-        guard await chord(0, in: pid, isCurrent: isCurrent) else { return .cancelled }
-        let beforeCopy = clipboard().change
-        guard await chord(8, in: pid, isCurrent: isCurrent) else { return .cancelled }
-        for _ in 0..<15 {
+        // Let the game process the shortcut's key-up before selecting the input.
+        try? await Task.sleep(for: .milliseconds(40))
+        for attempt in 1...3 {
             guard isCurrent() else { return .cancelled }
-            if clipboard().change != beforeCopy { break }
-            try? await Task.sleep(for: .milliseconds(20))
+            guard await chord(0, in: pid, isCurrent: isCurrent) else { return .cancelled }
+            // Select All can take more than one game frame. Subsequent attempts
+            // allow extra time, but only selection/copy is retried, never Paste.
+            try? await Task.sleep(for: .milliseconds(40 * attempt))
+            guard isCurrent() else { return .cancelled }
+            let beforeCopy = clipboard().change
+            guard await chord(8, in: pid, isCurrent: isCurrent) else { return .cancelled }
+            for _ in 0..<15 {
+                guard isCurrent() else { return .cancelled }
+                if clipboard().change != beforeCopy { break }
+                try? await Task.sleep(for: .milliseconds(20))
+            }
+            let selected = clipboard()
+            guard isCurrent() else { return .cancelled }
+            if selected.change != beforeCopy, let text = selected.text, !Self.singleLine(text).isEmpty {
+                if attempt > 1 { logger.notice("Draft selection recovered on attempt \(attempt)") }
+                return .selected(text)
+            }
+            logger.notice("Draft selection copy missed on attempt \(attempt)")
         }
-        let selected = clipboard()
-        guard isCurrent() else { return .cancelled }
-        guard selected.change != beforeCopy, let text = selected.text,
-              !Self.singleLine(text).isEmpty else { return .failed }
-        return .selected(text)
+        return .failed
     }
 
     func replace(in pid: pid_t, original: String, translation: String, isCurrent: () -> Bool) async -> Result {

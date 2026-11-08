@@ -32,9 +32,7 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
     private var demoView: DemoChat?
     private var notice: OverlayPanel?
     private var noticeUntil: Date?
-    private var draftRequested = false
     private var draftRunning = false
-    private var draftActivity: DraftActivity?
     private let draftInput = DraftInput()
     private var readingChat = false
     private var lastSharedFrame: UInt64?
@@ -119,7 +117,7 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
 
     private func updateForeground() {
         let inGame = foregroundWoW != nil
-        if !inGame { draftRequested = false; hidePanels() }
+        if !inGame { hidePanels() }
         emit("foreground", text: inGame ? "wow" : "other")
     }
 
@@ -130,12 +128,10 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
             if let sharedWindow {
                 guard let id = sharedWindow.windowID, let frame = currentFrame(of: id) else { hidePanels(); return }
                 guard let region = prepareRegion(frame, id: id) else { return }
-                guard let snapshot = sharedWindow.snapshot(), snapshot.number != lastSharedFrame || draftRequested,
+                guard let snapshot = sharedWindow.snapshot(), snapshot.number != lastSharedFrame,
                       let crop = snapshot.image(in: region.rect, windowSize: frame.size) else { return }
                 lastSharedFrame = snapshot.number
-                inspect(crop, region: region.rect, frame: frame, id: id, pid: pid) { area in
-                    snapshot.image(in: area, windowSize: frame.size)
-                }
+                inspect(crop, region: region.rect, frame: frame, id: id, pid: pid)
                 return
             }
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
@@ -164,9 +160,7 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
             let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
             guard version == visibilityVersion, foregroundWoW == pid,
                   let crop = cropChat(image, region: region.rect, windowSize: window.frame.size) else { return }
-            inspect(crop, region: region.rect, frame: window.frame, id: window.windowID, pid: pid) { area in
-                cropChat(image, region: area, windowSize: window.frame.size)
-            }
+            inspect(crop, region: region.rect, frame: window.frame, id: window.windowID, pid: pid)
         } catch {
             recordCaptureFailure()
         }
@@ -195,23 +189,8 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
     }
 
     private func inspect(_ crop: CGImage, region: CGRect, frame: CGRect,
-                         id: CGWindowID, pid: pid_t, cropDraft: (CGRect) -> CGImage?) {
+                         id: CGWindowID, pid: pid_t) {
         let version = visibilityVersion
-        if draftRequested, !draftRunning {
-            draftRequested = false
-            let area = draftArea(near: region, windowSize: frame.size)
-            let activity = draftActivity
-            draftActivity = nil
-            if let image = cropDraft(area), let activity {
-                draftRunning = true
-                Task {
-                    defer { draftRunning = false }
-                    await translateDraft(image, area: area, pid: pid, id: id, frame: frame,
-                                         version: version, activity: activity)
-                }
-            }
-        }
-
         let motion = ChatMotionFrame(image: crop, area: region)
         latestMotion = motion
         if let motion, let reference = motionReference,
@@ -360,15 +339,21 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
             updateStatus("와우에서 채팅 영역을 지정해 주세요.")
         } else if command.action == "draft" {
             logger.notice("Draft shortcut received: game=\(self.foregroundWoW != nil), region=\(self.region != nil), busy=\(self.draftRunning)")
-            guard foregroundWoW != nil, region != nil, !draftRunning else { return }
-            draftActivity = .current()
-            draftRequested = true
+            guard let pid = foregroundWoW, region != nil, !draftRunning,
+                  let id = windowID, let frame = currentFrame(of: id) else { return }
+            let activity = DraftActivity.current()
+            let version = visibilityVersion
+            draftRunning = true
             showNotice("영어로 바꾸는 중…")
+            Task {
+                defer { draftRunning = false }
+                await translateDraft(pid: pid, id: id, frame: frame, version: version, activity: activity)
+            }
         }
     }
 
-    private func translateDraft(_ image: CGImage, area: CGRect, pid: pid_t, id: CGWindowID,
-                                frame: CGRect, version: Int, activity: DraftActivity) async {
+    private func translateDraft(pid: pid_t, id: CGWindowID, frame: CGRect,
+                                version: Int, activity: DraftActivity) async {
         guard #available(macOS 26.0, *) else { return }
         let start = ContinuousClock.now
         func isCurrent() -> Bool {
@@ -377,17 +362,9 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
                 && currentFrame(of: id).map { frameMatches($0, frame) } == true
         }
         do {
-            let draft = try await Task.detached(priority: .userInitiated) {
-                try recognizeDraft(image, area: area)
-            }.value
             guard isCurrent() else {
                 logger.notice("Draft cancelled before translation: focus or input changed")
                 if foregroundWoW == pid { showNotice("입력 내용이 바뀌었어요 · 다시 ⌘⇧K") }
-                return
-            }
-            guard draft != nil else {
-                logger.notice("Draft input not recognized")
-                showNotice("채팅 입력칸에 한국어를 쓴 뒤 ⌘⇧K를 누르세요.")
                 return
             }
             guard draftInput.hasPermission() else {
@@ -466,7 +443,6 @@ final class ChatOverlay: NSObject, NSApplicationDelegate {
         hidePanels()
         panels.removeAll()
         rows.clear()
-        draftRequested = false
     }
 
     private func updateStatus(_ text: String) {

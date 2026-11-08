@@ -14,6 +14,11 @@ struct DraftInputChecks {
         var selectionWorks = true
         var copyWorks = true
         var changeAfterSelect = false
+        var missedSelections = 0
+        var missedCopies = 0
+        var selectAttempts = 0
+        var copyAttempts = 0
+        var cancelOnCopy = false
         var clipboardText = "previous clipboard"
         var clipboardChange = 1
         var keys: [Int64] = []
@@ -33,10 +38,13 @@ struct DraftInputChecks {
             guard commandHeld else { return }
             switch key {
             case 0:
-                selected = selectionWorks
+                selectAttempts += 1
+                selected = selectionWorks && selectAttempts > missedSelections
                 if changeAfterSelect { current = false }
             case 8:
-                if selected && copyWorks { clipboardText = field; clipboardChange += 1 }
+                copyAttempts += 1
+                if selected && copyWorks && copyAttempts > missedCopies { clipboardText = field; clipboardChange += 1 }
+                if cancelOnCopy { current = false }
             case 9:
                 field = selected ? clipboardText : field + clipboardText
                 selected = false
@@ -56,11 +64,24 @@ struct DraftInputChecks {
         func reset() {
             field = original; selected = false; keys = []; targetPIDs = []
             current = true; selectionWorks = true; copyWorks = true; changeAfterSelect = false
+            missedSelections = 0; missedCopies = 0; selectAttempts = 0; copyAttempts = 0; cancelOnCopy = false
         }
+        reset()
+        missedSelections = 1
+        let recoveredSelection = await input.replace(in: 123, original: original, translation: english, isCurrent: { current })
+        precondition(recoveredSelection == .replaced && field == english && selectAttempts == 2
+            && keys.filter { $0 == 9 }.count == 1 && !commandHeld,
+            "A single request must recover from an ignored Select All without duplicate pastes.")
+        reset()
+        missedCopies = 2
+        let recoveredCopy = await input.replace(in: 123, original: original, translation: english, isCurrent: { current })
+        precondition(recoveredCopy == .replaced && field == english && copyAttempts == 3
+            && keys.filter { $0 == 9 }.count == 1 && !commandHeld,
+            "A single request must recover from transient Copy failures.")
         reset()
         selectionWorks = false
         let appended = await input.replace(in: 123, original: original, translation: english, isCurrent: { current })
-        precondition(appended == .selectionFailed && field == original && !keys.contains(9),
+        precondition(appended == .selectionFailed && field == original && !keys.contains(9) && selectAttempts == 3,
                      "If Select All is ignored by the game, do not append or touch the draft.")
         reset()
         clipboardText = original
@@ -68,6 +89,12 @@ struct DraftInputChecks {
         let staleClipboard = await input.replace(in: 123, original: original, translation: english, isCurrent: { current })
         precondition(staleClipboard == .selectionFailed && field == original && !keys.contains(9),
                      "Previously copied identical text is not proof of a current selection.")
+        reset()
+        copyWorks = false
+        cancelOnCopy = true
+        let retryInterrupted = await input.replace(in: 123, original: original, translation: english, isCurrent: { current })
+        precondition(retryInterrupted == .cancelled && copyAttempts == 1 && !keys.contains(9) && !commandHeld,
+                     "User input during a failed copy must stop retries immediately.")
         reset()
         field = "여관 앞에서 만나요 추가로 쓴 내용"
         let mismatch = await input.replace(in: 123, original: original, translation: english, isCurrent: { current })
@@ -90,6 +117,6 @@ struct DraftInputChecks {
         let unreleased = await input.replace(in: 123, original: original, translation: english, isCurrent: { current })
         precondition(unreleased == .cancelled && targetPIDs.isEmpty)
         precondition(DraftInput.singleLine(" Meet\r\nme\tat the inn.\u{2028} ") == "Meet me at the inn.")
-        print("Draft input checks passed: replace without appending, failed/stale selection, changed draft/focus, modifier cleanup, permission, and no Enter.")
+        print("Draft input checks passed: single-request recovery, bounded retries, no duplicate paste, failed/stale selection, changed draft/focus, modifier cleanup, permission, and no Enter.")
     }
 }
